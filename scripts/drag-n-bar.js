@@ -1361,19 +1361,10 @@ H5P.DragNBar.prototype.findNewPoint = function (originX, originY, angle, distanc
  * @param {string} uniqueClassName 
  */
  H5P.DragNBar.prototype.createMoveableControlBoxOnElement = function ($element, uniqueClassName) {
-  
-  const checkIfIsImage = () => $element.find("img").length > 0;
-  const checkIfIsShape = () => $element[0].querySelector('.h5p-shape-element') != null;
-  const checkIfIsChart = () => $element[0].querySelector('.h5p-chart') != null;
 
-  let isShape = false;
-  isShape = checkIfIsShape();
-
-  let isChart = false;
-  isChart = checkIfIsChart();
-    
-  let isImage = false;
-  isImage = checkIfIsImage();
+  const isImage = $element.find("img").length > 0;
+  const isShape = $element[0].querySelector('.h5p-shape-element') != null;
+  const isChart = $element[0].querySelector('.h5p-chart') != null;
 
   if (typeof $element !== "undefined") {
     const moveable = new Moveable(document.body, {
