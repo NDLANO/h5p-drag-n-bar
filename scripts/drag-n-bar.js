@@ -726,7 +726,7 @@ H5P.NDLADragNBar.prototype.addButton = function (button, $list) {
         ${ariaLabel}
       ></a>
     </li>`
-  
+
   ).appendTo($list);
 
   // Prevent empty tooltips (would show on Firefox)
@@ -761,6 +761,9 @@ H5P.NDLADragNBar.prototype.addButton = function (button, $list) {
   }
 
   $button
+    .hover(function () {
+      that.containTooltips();
+    })
     .children()
     .click(function () {
       return false;
@@ -774,22 +777,10 @@ H5P.NDLADragNBar.prototype.addButton = function (button, $list) {
       if (button.type === "group") {
         if ($buttonGroup !== undefined) {
           // Set position here, because content types might add buttons out of order
-          const $dragNBar = $button.closest(".h5p-dragnbar");
-          const verticalOffset = $dragNBar.height();
-
-          const buttonPos = $button.position();
-          const buttonGroupPos = $buttonGroup.position();
-
-          const xPosition =
-            buttonPos.left - buttonGroupPos.left;
-          const yPosition = verticalOffset;
-
-          if (xPosition > 0) {
-            $buttonGroup.css("left", xPosition);
-          }
-
-          if (yPosition > 0) {
-            $buttonGroup.css("top", yPosition);
+          const offset = parseFloat($button.closest('.h5p-dragnbar').css('padding-left'));
+          const position = $button.position().left - $buttonGroup.position().left - offset;
+          if (position > 0) {
+            $buttonGroup.css('left', position);
           }
 
           // Show dropdown and hide buttons tooltip
@@ -809,6 +800,38 @@ H5P.NDLADragNBar.prototype.addButton = function (button, $list) {
         that.focus(that.$element);
       }
     });
+};
+
+/**
+ * Contain tooltips.
+ *
+ * @returns {undefined}
+ */
+H5P.NDLADragNBar.prototype.containTooltips = function () {
+  var that = this;
+
+  var containerWidth = that.$container.outerWidth();
+
+  this.$list.find('.h5p-dragnbar-tooltip').each(function () {
+    // Get correct offset even if element is a child
+    var width = H5P.jQuery(this).outerWidth();
+    var parentWidth = H5P.jQuery(this).parents('.h5p-dragnbar-li').last().outerWidth();
+
+    // Center the tooltip
+    H5P.jQuery(this).css('left', -(width / 2) + (parentWidth / 2) + 'px');
+
+    var offsetLeft = H5P.jQuery(this).position().left += H5P.jQuery(this).parents('.h5p-dragnbar-li').last().position().left;
+
+    // If outside left edge
+    if (offsetLeft <= 0) {
+      H5P.jQuery(this).css('left', 0);
+    }
+
+    // If outside right edge
+    if (offsetLeft + width > containerWidth) {
+      H5P.jQuery(this).css('left', -(width - parentWidth));
+    }
+  });
 };
 
 /**
@@ -977,7 +1000,7 @@ H5P.NDLADragNBar.prototype.moveWithKeys = function (x, y) {
  * @param {string} [clipboardData]
  * @returns {H5P.NDLADragNBarElement} Reference to added dnbelement
  */
-H5P.NDLADragNBar.prototype.add = function ($element, clipboardData, options) {  
+H5P.NDLADragNBar.prototype.add = function ($element, clipboardData, options) {
   options = options || {};
   let newElement = null;
 
@@ -994,7 +1017,7 @@ H5P.NDLADragNBar.prototype.add = function ($element, clipboardData, options) {
   }
 
   $element.addClass("h5p-dragnbar-element");
-  
+
   // Adding control-box on element (moveable)
   this.addControlBoxOnElement(newElement);
 
@@ -1030,7 +1053,7 @@ H5P.NDLADragNBar.prototype.add = function ($element, clipboardData, options) {
       this.dnd.press($element, event.pageX, event.pageY);
     });
   }
-  
+
   $element.focus(() => {
     this.focus($element);
   });
@@ -1040,8 +1063,8 @@ H5P.NDLADragNBar.prototype.add = function ($element, clipboardData, options) {
 
 /**
  * Adding control-box on element (moveable)
- * 
- * @param {H5P.NDLADragNBarElement} element 
+ *
+ * @param {H5P.NDLADragNBarElement} element
  */
 H5P.NDLADragNBar.prototype.addControlBoxOnElement = function (element) {
   if (window.getComputedStyle(element.$element[0]).getPropertyValue("transform").length !== 0) {
@@ -1076,12 +1099,12 @@ H5P.NDLADragNBar.prototype.addControlBoxOnElement = function (element) {
 H5P.NDLADragNBar.prototype.removeControlBoxesNotInUse = function () {
   /**
    * @param {string} uniqueClassPrefix
-   * @param {DOMTokenList} classList 
+   * @param {DOMTokenList} classList
    */
-  const getUniqueId = (uniqueClassPrefix, classList) => {    
+  const getUniqueId = (uniqueClassPrefix, classList) => {
     const classNames = Array.from(classList);
     const uniqueClass = classNames.find(cName => cName.startsWith(uniqueClassPrefix));
-    
+
     if (!uniqueClass) {
       return null;
     }
@@ -1102,7 +1125,7 @@ H5P.NDLADragNBar.prototype.removeControlBoxesNotInUse = function () {
     const isInDragQuestion = Boolean(connectedElement&&connectedElement.closest('.h5peditor-dragquestion'));
     return !isInDragQuestion && !uniqueClassStringList.includes(uniqueId);
   });
-  
+
   for (const controlBox of disconnectedControlBoxes) {
     controlBox.remove();
   }
@@ -1120,8 +1143,8 @@ H5P.NDLADragNBar.prototype.hideControlBoxes = function () {
 
 /**
  * Adjusting the position of the control-box to overlap the element.
- * 
- * @param {H5P.NDLADragNBarElement} element 
+ *
+ * @param {H5P.NDLADragNBarElement} element
  * @param {String} uniqueControlBoxClass The control-box and element both share this unique id in their classList in order to have a connection since they are placed in different locations in the document.
  */
  H5P.NDLADragNBar.prototype.adjustControlBoxPositionOnElement = function (element, uniqueControlBoxClass) {
@@ -1356,9 +1379,9 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
  * Create a `Moveable` which adds a control-box to an element,
  * which controls the resizing and rotation of the element.
  * https://github.com/daybrush/moveable
- * 
- * @param {H5P.jQuery} $element 
- * @param {string} uniqueClassName 
+ *
+ * @param {H5P.jQuery} $element
+ * @param {string} uniqueClassName
  */
  H5P.NDLADragNBar.prototype.createMoveableControlBoxOnElement = function ($element, uniqueClassName) {
 
@@ -1392,7 +1415,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
     let angle = 0;
     const transformList = $element[0].style.transform.split("rotate(");
     const [translation, rotation] = transformList;
-    
+
     if (translation) {
       angle = parseInt(rotation);
 
@@ -1462,7 +1485,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
         if(inputEvent.shiftKey) {
           moveable.keepRatio = false;
         }
-        
+
         // Finding corner positions to ensure the element is never outside the container borders
         // *************************************************************************************
         const theElement = target;
@@ -1497,7 +1520,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
           // This check is included because when creating a 'drag and drop' (drag-question.js), the element's width and height are stored as em
         } else if(theElement.style.width.includes("em")) {
           widthPixels = parseFloat(theElement.style.width) * 16;
-        } 
+        }
         else {
           widthPixels = parseInt(theElement.style.width)
         }
@@ -1514,7 +1537,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
 
         const topRightCorner0DegreesPos = [origin[0] + 0.5 * widthPixels, origin[1] - 0.5 * heightPixels];
         const topLeftCorner0DegreesPos = [origin[0] - 0.5 * widthPixels, origin[1] - 0.5 * heightPixels];
-        
+
         const angleTopRight0Degrees = Math.atan2(origin[1] - topRightCorner0DegreesPos[1], topRightCorner0DegreesPos[0] - origin[0]) * 180 / Math.PI;
         const angleTopLeft0Degrees = Math.atan2(origin[1] - topLeftCorner0DegreesPos[1], topLeftCorner0DegreesPos[0] - origin[0]) * 180 / Math.PI;
         const angleBottomRight0Degrees = -angleTopRight0Degrees;
@@ -1613,7 +1636,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
           target.style.height,
           target.style.transform,
           $element
-        ); 
+        );
       });
 
     // Rotate
@@ -1634,7 +1657,7 @@ H5P.NDLADragNBar.prototype.findNewPoint = function (originX, originY, angle, dis
       })
       .on("rotateEnd", ({ target, isDrag, clientX, clientY }) => {
         // This method can be found in cp-editor. Stores values in params.
-        this.stopRotationCallback(target.style.transform, $element); 
+        this.stopRotationCallback(target.style.transform, $element);
       });
   }
 };
